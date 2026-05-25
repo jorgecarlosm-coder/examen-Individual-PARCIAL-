@@ -1,0 +1,54 @@
+% ==================================================
+% CÓDIGO 5: GRÁFICA DE APLICACIONES - VERIFICADO
+% ==================================================
+% DATOS DEFINITIVOS
+f = [100, 120, 145, 170, 200, 235, 270, 310, 355, 405, ...
+     460, 520, 585, 655, 730, 810, 895, 985, 1080, 1180, ...
+     1290, 1410, 1540, 1680, 1830, 1990, 2160, 2340, 2530, 2730];
+
+Z = [152.3, 149.1, 146.8, 144.9, 142.0, 139.5, 137.9, 136.1, 134.8, 133.6, ...
+     132.7, 131.9, 131.4, 131.1, 130.9, 131.0, 131.3, 131.9, 132.7, 133.8, ...
+     135.2, 136.9, 138.9, 141.1, 143.5, 146.1, 149.0, 152.2, 155.6, 159.2];
+
+Z_th = 150;
+pp = spline(f, Z);
+f_eval = linspace(100, 2730, 1000);
+Z_eval = ppval(pp, f_eval);
+
+% Valores precisos
+raiz1 = 122.7012; 
+raiz2 = 2249.0035; 
+minZ = 130.9000; 
+minF = 730.0000;
+
+% Gráfica
+figure('Color','w');
+plot(f_eval, Z_eval, 'b-', 'LineWidth', 1.5); hold on;
+plot(f, Z, 'ko', 'MarkerSize', 4); % Puntos originales
+plot([100 2730], [Z_th Z_th], 'r--', 'LineWidth', 1.2); % Umbral
+
+% Marcar puntos importantes
+plot(minF, minZ, 'gp', 'MarkerSize', 12, 'MarkerFaceColor','g'); % Mínimo
+plot(raiz1, Z_th, 'ro', 'MarkerSize', 8, 'MarkerFaceColor','r'); % Raíz 1
+plot(raiz2, Z_th, 'ro', 'MarkerSize', 8, 'MarkerFaceColor','r'); % Raíz 2
+
+% Zona útil sombreada
+x1=raiz1; 
+x2=raiz2;
+% Área sombreada
+x_area = [x1, x2, x2, x1];
+y_area = [125, 125, 160, 160];
+fill(x_area, y_area, 'green', 'FaceAlpha', 0.1, 'EdgeColor','none');
+
+% Formato
+xlabel('Frecuencia f (Hz)');
+ylabel('Módulo de impedancia |Z| (\Omega)');
+title('Perfil de Impedancia: Zonas y Puntos Clave');
+legend('Curva interpolada','Datos','Umbral 150 \Omega','Mínimo','Raíces','Zona Útil','Location','best');
+grid on;
+ylim([125, 165]);
+
+% Etiquetas con valores precisos
+text(minF+50, minZ, sprintf('%.4f Ω',minZ), 'FontSize',8);
+text(raiz1-200, Z_th+3, sprintf('%.4f Hz',raiz1), 'FontSize',8);
+text(raiz2-200, Z_th+3, sprintf('%.4f Hz',raiz2), 'FontSize',8);
