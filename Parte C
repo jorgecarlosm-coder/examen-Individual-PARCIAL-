@@ -1,0 +1,64 @@
+% ==================================================
+% CÓDIGO 2: COMPARACIÓN DE MÉTODOS - VERIFICADO
+% ==================================================
+% DATOS DEFINITIVOS
+f = [100, 120, 145, 170, 200, 235, 270, 310, 355, 405, ...
+     460, 520, 585, 655, 730, 810, 895, 985, 1080, 1180, ...
+     1290, 1410, 1540, 1680, 1830, 1990, 2160, 2340, 2530, 2730];
+
+Z = [152.3, 149.1, 146.8, 144.9, 142.0, 139.5, 137.9, 136.1, 134.8, 133.6, ...
+     132.7, 131.9, 131.4, 131.1, 130.9, 131.0, 131.3, 131.9, 132.7, 133.8, ...
+     135.2, 136.9, 138.9, 141.1, 143.5, 146.1, 149.0, 152.2, 155.6, 159.2];
+
+pp = spline(f, Z);
+fun = @(x) ppval(pp, x) - 150;
+pp_der = fnder(pp,1);
+dfun = @(x) ppval(pp_der, x);
+
+% --- Método Bisección ---
+a=100; b=730; tol=1e-6;
+iter_bis = []; val_bis = [];
+for k=1:25
+    c=(a+b)/2;
+    iter_bis(k)=c;
+    val_bis(k)=fun(c);
+    if fun(a)*fun(c) < 0
+        b=c;
+    else
+        a=c;
+    end
+end
+
+% --- Método Newton-Raphson ---
+x0=150;
+iter_nr = []; val_nr = [];
+for k=1:10
+    xn = x0 - fun(x0)/dfun(x0);
+    iter_nr(k)=xn;
+    val_nr(k)=fun(xn);
+    x0=xn;
+end
+
+% --- Gráfica ---
+figure('Color','w');
+subplot(1,2,1);
+plot(iter_bis, 'b-o', 'LineWidth',1); hold on;
+plot(iter_nr, 'r-s', 'LineWidth',1);
+title('Convergencia: Valor de la raíz');
+xlabel('Iteración'); ylabel('f (Hz)');
+legend('Bisección','Newton-Raphson','Location','best'); grid on;
+
+subplot(1,2,2);
+plot(abs(val_bis), 'b-o', 'LineWidth',1); hold on;
+plot(abs(val_nr), 'r-s', 'LineWidth',1);
+set(gca, 'YScale', 'log'); % Escala logarítmica
+title('Error absoluto (|f(x)|)');
+xlabel('Iteración'); ylabel('Error');
+grid on;
+
+% Resultados con 4 decimales
+r1_bis = iter_bis(end); 
+r1_nr = iter_nr(end);
+fprintf('=== COMPARACIÓN ===\n');
+fprintf('Bisección      -> Raíz 1: %.4f Hz\n', r1_bis);
+fprintf('Newton-Raphson -> Raíz 1: %.4f Hz\n', r1_nr);
