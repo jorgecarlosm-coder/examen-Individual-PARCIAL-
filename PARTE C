@@ -1,0 +1,43 @@
+% --------------------------
+% Código: Derivadas numéricas mediante Spline
+% --------------------------
+% DATOS DEFINITIVOS
+f = [100, 120, 145, 170, 200, 235, 270, 310, 355, 405, ...
+     460, 520, 585, 655, 730, 810, 895, 985, 1080, 1180, ...
+     1290, 1410, 1540, 1680, 1830, 1990, 2160, 2340, 2530, 2730];
+
+Z = [152.3, 149.1, 146.8, 144.9, 142.0, 139.5, 137.9, 136.1, 134.8, 133.6, ...
+     132.7, 131.9, 131.4, 131.1, 130.9, 131.0, 131.3, 131.9, 132.7, 133.8, ...
+     135.2, 136.9, 138.9, 141.1, 143.5, 146.1, 149.0, 152.2, 155.6, 159.2];
+
+% Crear spline y calcular derivadas
+pp = spline(f, Z);
+pp1 = fnder(pp, 1); % Primera derivada: d|Z|/df
+pp2 = fnder(pp, 2); % Segunda derivada: d²|Z|/df²
+
+% Evaluar derivadas en todos los puntos
+dZdf = ppval(pp1, f);
+d2Zdf2 = ppval(pp2, f);
+
+% Mostrar resultados
+resultados = table(f', Z', dZdf', d2Zdf2', ...
+    'VariableNames', {'f_Hz', 'Z_Ohm', 'dZdf', 'd2Zdf2'});
+disp(resultados);
+
+% Gráfico de derivadas
+figure('Color','w');
+subplot(2,1,1); 
+plot(f, dZdf, 'm-o'); 
+hold on; plot([100 2730], [0 0], 'k--'); % Línea cero
+plot(730, dZdf(f==730), 'rp', 'MarkerSize',10);
+title('Primera derivada: d|Z|/df (Pendiente)'); 
+ylabel('\Omega/Hz'); 
+grid on;
+
+subplot(2,1,2); 
+plot(f, d2Zdf2, 'c-o'); 
+hold on; plot([100 2730], [0 0], 'k--');
+title('Segunda derivada: d^2|Z|/df^2 (Curvatura)'); 
+xlabel('Frecuencia f (Hz)'); 
+ylabel('\Omega/Hz^2'); 
+grid on;
