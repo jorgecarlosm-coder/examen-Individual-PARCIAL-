@@ -1,0 +1,77 @@
+% =========================================================================
+% MÉTODOS NUMÉRICOS: PARTE 1 - INTERPOLACIÓN BÁSICA Y SPLINE CÚBICO
+% =========================================================================
+clear; clc;
+
+% 1. Vectores de datos extraídos del ensayo de laboratorio
+f = [10.0; 12.5; 15.0; 17.5; 20.0; 22.5; 25.0; 27.5; 30.0; 32.5; 35.0; 37.5; ...
+     40.0; 42.5; 45.0; 47.5; 50.0; 52.5; 55.0; 57.5; 60.0; 62.5; 65.0; 67.5; ...
+     70.0; 72.5; 75.0; 77.5; 80.0; 82.5; 85.0; 87.5; 90.0; 92.5; 95.0; 97.5; ...
+     100.0; 102.5; 105.0; 107.5];
+
+V = [0.842; 0.911; 0.986; 1.062; 1.143; 1.227; 1.314; 1.401; 1.482; 1.551; ...
+     1.216; 1.048; 0.866; 0.689; 0.521; 0.364; 0.223; 0.103; 0.012; -0.041; ...
+     -0.057; -0.034; 0.018; 0.096; 0.197; 0.318; 0.452; 0.579; 0.700; ...
+     0.809; 0.611; 0.688; 0.756; 0.811; 0.856; 0.894; 0.926; 0.954; 0.980; 1.004];
+
+Z = [182.4; 178.9; 175.1; 171.0; 166.8; 162.7; 158.9; 155.4; 152.0; 149.0; ...
+     146.1; 145.2; 145.8; 147.3; 149.9; 153.5; 158.0; 163.2; 168.9; 174.8; ...
+     180.5; 186.2; 191.5; 196.2; 200.1; 203.1; 205.2; 206.3; 206.1; 204.7; ...
+     198.0; 194.4; 190.9; 187.8; 185.1; 183.0; 181.6; 180.8; 180.6; 180.9];
+
+% Frecuencias requeridas para la estimación precisa
+f_eval = [41.0; 73.0];
+
+% Función anónima para construir el Polinomio de Lagrange de 2do Grado
+lagrange2 = @(x, y, xe) ...
+    ((xe-x(2))*(xe-x(3)))/((x(1)-x(2))*(x(1)-x(3)))*y(1) + ...
+    ((xe-x(1))*(xe-x(3)))/((x(2)-x(1))*(x(2)-x(3)))*y(2) + ...
+    ((xe-x(1))*(xe-x(2)))/((x(3)-x(1))*(x(3)-x(2)))*y(3);
+
+fprintf('=========================================================================\n');
+fprintf('          RESULTADOS NUMÉRICOS DE INTERPOLACIÓN (PRECISIÓN: 4 DECIMALES)  \n');
+fprintf('=========================================================================\n');
+
+for i = 1:length(f_eval)
+    fe = f_eval(i);
+    
+    % Encontrar de forma automatizada los 3 puntos más cercanos (vecinos próximos)
+    [~, idx] = sort(abs(f - fe));
+    idx3 = sort(idx(1:3)); % Extrae e indexa los tres nodos más próximos ordenados
+    
+    % Evaluación mediante Lagrange local
+    V_lag = lagrange2(f(idx3), V(idx3), fe);
+    Z_lag = lagrange2(f(idx3), Z(idx3), fe);
+    
+    % Evaluación mediante Spline Cúbico Natural (sobre toda la estructura de la tabla)
+    V_spline = spline(f, V, fe);
+    Z_spline = spline(f, Z, fe);
+    
+    % Impresión de resultados con formato técnico solicitado
+    fprintf('Para la frecuencia f = %.4f kHz:\n', fe);
+    fprintf('  -> Puntos de la tabla utilizados en Lagrange: [%.1f, %.1f, %.1f] kHz\n', f(idx3(1)), f(idx3(2)), f(idx3(3)));
+    fprintf('  • V(f)   - Lagrange: %.4f V   || Spline Cúbico: %.4f V\n', V_lag, V_spline);
+    fprintf('  • |Z(f)| - Lagrange: %.4f Ohm || Spline Cúbico: %.4f Ohm\n', Z_lag, Z_spline);
+    fprintf('-------------------------------------------------------------------------\n');
+end
+
+% 3. Generación de curvas continuas de alta resolución para inspección visual
+f_plot = linspace(min(f), max(f), 1000);
+V_plot = spline(f, V, f_plot);
+Z_plot = spline(f, Z, f_plot);
+
+figure('Name', 'Interpolación de Ensayos de Telemetría', 'Color', [1 1 1]);
+
+subplot(2,1,1);
+plot(f, V, 'ro', 'MarkerFaceColor', 'r', 'DisplayName', 'Muestras de Laboratorio'); hold on;
+plot(f_plot, V_plot, 'b-', 'LineWidth', 1.5, 'DisplayName', 'Spline Cúbico Continuo');
+plot(f_eval, spline(f,V,f_eval), 'kx', 'MarkerSize', 10, 'LineWidth', 2, 'DisplayName', 'Puntos Estimados');
+grid on; ylabel('Voltaje de Salida V(f) [V]');
+title('Ajuste de Voltaje Analógico mediante Splines'); legend('Location', 'best');
+
+subplot(2,1,2);
+plot(f, Z, 'ks', 'MarkerFaceColor', 'k', 'DisplayName', 'Muestras de Laboratorio'); hold on;
+plot(f_plot, Z_plot, 'm-', 'LineWidth', 1.5, 'DisplayName', 'Spline Cúbico Continuo');
+plot(f_eval, spline(f,Z,f_eval), 'rx', 'MarkerSize', 10, 'LineWidth', 2, 'DisplayName', 'Puntos Estimados');
+grid on; xlabel('Frecuencia de Excitación f [kHz]'); ylabel('Impedancia |Z(f)| [\Omega]');
+title('Ajuste de Impedancia del Biosensor'); legend('Location', 'best');
