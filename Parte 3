@@ -1,0 +1,78 @@
+% =========================================================================
+% MÉTODOS NUMÉRICOS: PARTE 3 - RAÍCES POR BISECCIÓN Y SPLINE
+% =========================================================================
+clear; clc;
+
+% Datos del ensayo de laboratorio
+f = [10.0; 12.5; 15.0; 17.5; 20.0; 22.5; 25.0; 27.5; 30.0; 32.5; 35.0; 37.5; ...
+     40.0; 42.5; 45.0; 47.5; 50.0; 52.5; 55.0; 57.5; 60.0; 62.5; 65.0; 67.5; ...
+     70.0; 72.5; 75.0; 77.5; 80.0; 82.5; 85.0; 87.5; 90.0; 92.5; 95.0; 97.5; ...
+     100.0; 102.5; 105.0; 107.5];
+
+V = [0.842; 0.911; 0.986; 1.062; 1.143; 1.227; 1.314; 1.401; 1.482; 1.551; ...
+     1.216; 1.048; 0.866; 0.689; 0.521; 0.364; 0.223; 0.103; 0.012; -0.041; ...
+     -0.057; -0.034; 0.018; 0.096; 0.197; 0.318; 0.452; 0.579; 0.700; ...
+     0.809; 0.611; 0.688; 0.756; 0.811; 0.856; 0.894; 0.926; 0.954; 0.980; 1.004];
+
+tol = 1e-5; % Tolerancia para convergencia de bisección
+
+%% 1. DETECCIÓN DE CAMBIOS DE SIGNO Y BISECCIÓN
+cambios = find(V(1:end-1) .* V(2:end) < 0);
+num_raices = length(cambios);
+
+raiz_bisecc = zeros(num_raices, 1);
+raiz_spline = zeros(num_raices, 1);
+lim_inf = zeros(num_raices, 1);
+lim_sup = zeros(num_raices, 1);
+
+ppV = spline(f, V); % Construcción del Spline para refinamiento
+
+for r = 1:num_raices
+    idx = cambios(r);
+    xa = f(idx); xb = f(idx+1);
+    lim_inf(r) = xa; lim_sup(r) = xb;
+    
+    % A. Bisección basada en la tabla original (lineal local)
+    a_temp = xa; b_temp = xb;
+    while (b_temp - a_temp) > tol
+        xc = (a_temp + b_temp) / 2;
+        Vc = interp1(f, V, xc, 'linear');
+        Va = interp1(f, V, a_temp, 'linear');
+        if Va * Vc < 0
+            b_temp = xc;
+        else
+            a_temp = xc;
+        end
+    end
+    raiz_bisecc(r) = xc;
+    
+    % B. Refinamiento utilizando la curva continua del Spline Cúbico
+    raiz_spline(r) = fzero(@(x) ppval(ppV, x), [xa, xb]);
+end
+
+%% 2. PRESENTACIÓN DE TABLA DE RESULTADOS
+Tabla_Raices = table((1:num_raices)', lim_inf, lim_sup, raiz_bisecc, raiz_spline, ...
+    'VariableNames', {'No_Raiz', 'Intervalo_A', 'Intervalo_B', 'Biseccion_Lineal', 'Refinamiento_Spline'});
+
+fprintf('\n=========================================================================\n');
+fprintf('       TABLA DE LOCALIZACIÓN DE RAÍCES (PRECISIÓN: 4 DECIMALES)          \n');
+fprintf('=========================================================================\n');
+disp(Tabla_Raices);
+
+%% 3. GENERACIÓN DE GRÁFICO TÉCNICO
+f_grid = linspace(50, 70, 1000); % Zoom en la zona de interés de los cruces
+V_grid = ppval(ppV, f_grid);
+
+figure('Name', 'Detección de Cruces por Cero (Raíces)', 'Color', [1 1 1]);
+plot(f_grid, V_grid, 'b-', 'LineWidth', 2, 'DisplayName', 'V(f) Spline Cúbico'); hold on; grid on;
+stem(f(45-25:45-15), V(45-25:45-15), 'k--', 'LineWidth', 1, 'DisplayName', 'Muestras de la Tabla'); % Puntos cercanos
+
+% Marcar las raíces encontradas
+plot(raiz_bisecc, zeros(num_raices,1), 'rd', 'MarkerSize', 8, 'LineWidth', 1.5, 'DisplayName', 'Bisección Lineal');
+plot(raiz_spline, zeros(num_raices,1), 'go', 'MarkerSize', 9, 'MarkerFaceColor', 'g', 'DisplayName', 'Refinamiento Spline');
+
+yline(0, 'k-', 'LineWidth', 1.2, 'HandleVisibility', 'off'); % Eje horizontal de cero
+title('Análisis de Cruces por Cero de Voltaje V(f)');
+xlabel('Frecuencia de Excitación f (kHz)'); ylabel('Voltaje de Salida V (V)');
+xlim([52.5, 67.5]); ylim([-0.1, 0.2]); % Acotar visualización
+legend('Location', 'best');
